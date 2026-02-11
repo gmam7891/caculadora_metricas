@@ -140,7 +140,8 @@ with tabs[0]:
         if manual_ftd_toggle:
             manual_ftd = st.number_input("FTD real (total)", min_value=0.0, value=0.0, step=1.0, format="%.0f")
 
-        cvr_ftd = st.number_input("CVR para FTD (0,02 = 2%)", min_value=0.0, value=0.0, step=0.005, format="%.6f")
+        cvr_ftd_pct = st.number_input("CVR para FTD (%)", min_value=0.0, max_value=100.0, value=0.0, step=1.0, format="%.0f")
+        cvr_ftd = cvr_ftd_pct / 100.0
         value_per_ftd = st.number_input("Valor por FTD (R$) — LTV/NGR médio", min_value=0.0, value=0.0, step=50.0, format="%.0f")
 
         st.markdown("### Metas")
