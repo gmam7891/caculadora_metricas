@@ -92,8 +92,8 @@ def get_cfg(key: str, default: str = "") -> str:
     except Exception:
         return default
 
-CLIENT_ID = get_cfg("d2evugowek4wfnwn8hcki9gpprlxpy", "")
-CLIENT_SECRET = get_cfg("ud5ks4z31r7stjtanemv75t1kplnar", "")
+client_id = get_cfg("d2evugowek4wfnwn8hcki9gpprlxpy", "")
+client_secret = get_cfg("ud5ks4z31r7stjtanemv75t1kplnar", "")
 db_path = get_cfg("APP_DB_PATH", "./data/app.db")
 
 
