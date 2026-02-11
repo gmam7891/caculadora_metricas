@@ -120,12 +120,14 @@ with tabs[0]:
         st.markdown("### Instagram Stories")
         stories_qty = st.number_input("Qtd Stories (frames/combos)", min_value=0, value=6, step=1)
         stories_avg_views = st.number_input("Views médias por Story", min_value=0.0, value=40000.0, step=1000.0)
-        stories_ctr = st.number_input("CTR Stories (0,01 = 1%)", min_value=0.0, value=0.01, step=0.001, format="%.6f")
+        stories_ctr_pct = st.number_input("CTR Stories (%)", min_value=0.0, max_value=100.0, value=1.0, step=0.1)
+        stories_ctr = stories_ctr_pct / 100.0
 
         st.markdown("### TikTok")
         tiktok_qty = st.number_input("Qtd TikToks", min_value=0, value=1, step=1)
-        tiktok_avg_views = st.number_input("Views médias por TikTok", min_value=0.0, value=200000.0, step=1000.0)
-        tiktok_ctr = st.number_input("CTR TikTok", min_value=0.0, value=0.002, step=0.001, format="%.6f")
+        tiktok_avg_views = st.number_input("Views médias por TikTok", min_value=0.0, value=200000.0, step=1000.0)  
+        tiktok_ctr_pct = st.number_input("CTR TikTok (%)", min_value=0.0, max_value=100.0, value=0.2, step=0.1)
+        tiktok_ctr = tiktok_ctr_pct / 100.0
 
         st.markdown("### Funil (FTD)")
         manual_clicks_toggle = st.checkbox("Tenho cliques reais (sobrescrever CTR)", value=False)
