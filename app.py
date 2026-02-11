@@ -124,7 +124,7 @@ with tabs[0]:
         stories_ctr = stories_ctr_pct / 100.0
 
         st.markdown("### TikTok")
-        tiktok_qty = st.number_input("Qtd TikToks", min_value=0, value=1, step=1)
+        tiktok_qty = st.number_input("Qtd TikToks", min_value=0, value=0, step=1)
         tiktok_avg_views = st.number_input("Views médias por TikTok", min_value=0.0, value=0.0, step=1000.0)  
         tiktok_ctr_pct = st.number_input("CTR TikTok (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
         tiktok_ctr = tiktok_ctr_pct / 100.0
@@ -133,20 +133,20 @@ with tabs[0]:
         manual_clicks_toggle = st.checkbox("Tenho cliques reais (sobrescrever CTR)", value=False)
         manual_clicks = None
         if manual_clicks_toggle:
-            manual_clicks = st.number_input("Cliques reais (total)", min_value=0.0, value=1200.0, step=50.0)
+            manual_clicks = st.number_input("Cliques reais (total)", min_value=0.0, value=0.0, step=50.0, format="%.0f")
 
         manual_ftd_toggle = st.checkbox("Tenho FTD real (sobrescrever projeção)", value=False)
         manual_ftd = None
         if manual_ftd_toggle:
-            manual_ftd = st.number_input("FTD real (total)", min_value=0.0, value=0.0, step=1.0)
+            manual_ftd = st.number_input("FTD real (total)", min_value=0.0, value=0.0, step=1.0, format="%.0f")
 
         cvr_ftd = st.number_input("CVR para FTD (0,02 = 2%)", min_value=0.0, value=0.0, step=0.005, format="%.6f")
-        value_per_ftd = st.number_input("Valor por FTD (R$) — LTV/NGR médio", min_value=0.0, value=600.0, step=50.0)
+        value_per_ftd = st.number_input("Valor por FTD (R$) — LTV/NGR médio", min_value=0.0, value=0.0, step=50.0, format="%.0f")
 
         st.markdown("### Metas")
         target_roi_pct = st.number_input("ROI alvo (%)", min_value=-100.0, max_value=1000.0, value=0.0, step=5.0)
         target_roi = target_roi_pct / 100.0
-        target_cpa = st.number_input("CPA (FTD) alvo (R$)", value=0.0, step=25.0)
+        target_cpa = st.number_input("CPA (FTD) alvo (R$)", value=350.0, step=25.0, format="%.0f")
 
     with c2:
         st.subheader("Resultados")
