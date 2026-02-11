@@ -147,7 +147,7 @@ with tabs[0]:
         st.markdown("### Metas")
         target_roi_pct = st.number_input("ROI alvo (%)", min_value=-100.0, max_value=1000.0, value=0.0, step=5.0)
         target_roi = target_roi_pct / 100.0
-        target_cpa = st.number_input("CPA (FTD) alvo (R$)", value=350.0, step=25.0, format="%.0f")
+        target_cpa = st.number_input("CPA (FTD) alvo (R$)", value=0.0, step=25.0, format="%.0f")
 
     with c2:
         st.subheader("Resultados")
@@ -216,8 +216,8 @@ with tabs[1]:
         default_list = load_streamers_file("streamers.txt")
         channel = st.text_input("Canal (login)", value=(default_list[0] if default_list else "shroud")).lower().strip()
 
-        planned_hours = st.number_input("Horas contratadas (mês)", min_value=0.0, value=20.0, step=1.0)
-        churn_factor = st.number_input("Fator de churn (estimativa p/ views únicas)", min_value=0.5, value=2.5, step=0.1)
+        planned_hours = st.number_input("Horas contratadas (mês)", min_value=0.0, value=20.0, step=1.0, format="%.0f")
+        churn_factor  = st.number_input("Fator de churn (estimativa p/ views únicas)", min_value=1.0, value=2.0, step=1.0, format="%.0f")
 
         st.markdown("### Bootstrap (se ainda não tem histórico)")
         use_manual = st.checkbox("Usar valores manuais (até o coletor formar base)", value=False)
