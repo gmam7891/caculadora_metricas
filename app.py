@@ -119,7 +119,7 @@ with tabs[0]:
         reels_ctr = reels_ctr_pct / 100.0
         st.markdown("### Instagram Stories")
         stories_qty = st.number_input("Qtd Stories (frames/combos)", min_value=0, value=0, step=1)
-        stories_avg_views = st.number_input("Views médias por Story", min_value=0.0, value=0.0, step=1000.0)
+        stories_avg_views = st.number_input("Views médias por Story", min_value=0.0, value=0, step=1000.0)
         stories_ctr_pct = st.number_input("CTR Stories (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1, format="%.0f")
         stories_ctr = stories_ctr_pct / 100.0
 
