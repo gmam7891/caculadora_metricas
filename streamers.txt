@@ -1,0 +1,3 @@
+# Um login por linha (minúsculo ou não, o app normaliza)
+shroud
+gaules
