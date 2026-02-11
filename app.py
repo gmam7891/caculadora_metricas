@@ -81,9 +81,21 @@ load_dotenv()
 st.set_page_config(page_title="Valuation Influenciadores + Twitch", layout="wide")
 st.title("Valuation Influenciadores + Twitch")
 
-client_id = os.getenv("TWITCH_CLIENT_ID", "")
-client_secret = os.getenv("TWITCH_CLIENT_SECRET", "")
-db_path = os.getenv("APP_DB_PATH", "./data/app.db")
+def get_cfg(key: str, default: str = "") -> str:
+    # 1) .env / env vars
+    v = os.getenv(key)
+    if v:
+        return v
+    # 2) Streamlit Secrets (Cloud)
+    try:
+        return str(st.secrets.get(key, default))
+    except Exception:
+        return default
+
+client_id = get_cfg("TWITCH_CLIENT_ID", "")
+client_secret = get_cfg("TWITCH_CLIENT_SECRET", "")
+db_path = get_cfg("APP_DB_PATH", "./data/app.db")
+
 
 conn = storage.connect(db_path)
 storage.init_db(conn)
