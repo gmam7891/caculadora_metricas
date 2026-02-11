@@ -144,7 +144,8 @@ with tabs[0]:
         value_per_ftd = st.number_input("Valor por FTD (R$) — LTV/NGR médio", min_value=0.0, value=600.0, step=50.0)
 
         st.markdown("### Metas")
-        target_roi = st.number_input("ROI alvo (0,30 = +30%)", value=0.30, step=0.05, format="%.2f")
+        target_roi_pct = st.number_input("ROI alvo (%)", min_value=-100.0, max_value=1000.0, value=30.0, step=5.0)
+        target_roi = target_roi_pct / 100.0
         target_cpa = st.number_input("CPA (FTD) alvo (R$)", value=350.0, step=25.0)
 
     with c2:
