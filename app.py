@@ -115,33 +115,33 @@ with tabs[0]:
         st.markdown("### Instagram Reels")
         reels_qty = st.number_input("Qtd Reels", min_value=0, value=2, step=1)
         reels_avg_views = st.number_input("Views médias por Reel", min_value=0.0, value=0.0, step=1000.0, format="%.0f")
-        reels_ctr_pct = st.number_input("CTR Reels (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
+        reels_ctr_pct = st.number_input("CTR Reels (%)", min_value=0.0, max_value=100.0, value=0.3, step=0.1)
         reels_ctr = reels_ctr_pct / 100.0
         st.markdown("### Instagram Stories")
         stories_qty = st.number_input("Qtd Stories (frames/combos)", min_value=0, value=0, step=1)
-        stories_avg_views = st.number_input("Views médias por Story", min_value=0.0, value=0, step=1000.0)
-        stories_ctr_pct = st.number_input("CTR Stories (%)", min_value=0.0, max_value=100.0, value=0, step=0.1)
+        stories_avg_views = st.number_input("Views médias por Story", min_value=0.0, value=40000.0, step=1000.0)
+        stories_ctr_pct = st.number_input("CTR Stories (%)", min_value=0.0, max_value=100.0, value=1.0, step=0.1)
         stories_ctr = stories_ctr_pct / 100.0
 
         st.markdown("### TikTok")
         tiktok_qty = st.number_input("Qtd TikToks", min_value=0, value=1, step=1)
-        tiktok_avg_views = st.number_input("Views médias por TikTok", min_value=0.0, value=0.0, step=1000.0)  
-        tiktok_ctr_pct = st.number_input("CTR TikTok (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
+        tiktok_avg_views = st.number_input("Views médias por TikTok", min_value=0.0, value=200000.0, step=1000.0)  
+        tiktok_ctr_pct = st.number_input("CTR TikTok (%)", min_value=0.0, max_value=100.0, value=0.2, step=0.1)
         tiktok_ctr = tiktok_ctr_pct / 100.0
 
         st.markdown("### Funil (FTD)")
         manual_clicks_toggle = st.checkbox("Tenho cliques reais (sobrescrever CTR)", value=False)
         manual_clicks = None
         if manual_clicks_toggle:
-            manual_clicks = st.number_input("Cliques reais (total)", min_value=0.0, value=0.0, step=50.0)
+            manual_clicks = st.number_input("Cliques reais (total)", min_value=0.0, value=1200.0, step=50.0)
 
         manual_ftd_toggle = st.checkbox("Tenho FTD real (sobrescrever projeção)", value=False)
         manual_ftd = None
         if manual_ftd_toggle:
             manual_ftd = st.number_input("FTD real (total)", min_value=0.0, value=0.0, step=1.0)
 
-        cvr_ftd = st.number_input("CVR para FTD (0,02 = 2%)", min_value=0.0, value=0.0, step=0.005, format="%.6f")
-        value_per_ftd = st.number_input("Valor por FTD (R$) — LTV/NGR médio", min_value=0.0, value=0.0, step=50.0)
+        cvr_ftd = st.number_input("CVR para FTD (0,02 = 2%)", min_value=0.0, value=0.02, step=0.005, format="%.6f")
+        value_per_ftd = st.number_input("Valor por FTD (R$) — LTV/NGR médio", min_value=0.0, value=600.0, step=50.0)
 
         st.markdown("### Metas")
         target_roi_pct = st.number_input("ROI alvo (%)", min_value=-100.0, max_value=1000.0, value=30.0, step=5.0)
