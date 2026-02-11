@@ -125,7 +125,7 @@ with tabs[0]:
 
         st.markdown("### TikTok")
         tiktok_qty = st.number_input("Qtd TikToks", min_value=0, value=1, step=1)
-        tiktok_avg_views = st.number_input("Views médias por TikTok", min_value=0.0, value=0.0, step=1000.0, format="%.0f"))  
+        tiktok_avg_views = st.number_input("Views médias por TikTok", min_value=0.0, value=0.0, step=1000.0, format="%.0f")  
         tiktok_ctr_pct = st.number_input("CTR TikTok (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
         tiktok_ctr = tiktok_ctr_pct / 100.0
 
