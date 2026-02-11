@@ -115,7 +115,7 @@ with tabs[0]:
         st.markdown("### Instagram Reels")
         reels_qty = st.number_input("Qtd Reels", min_value=0, value=0, step=1)
         reels_avg_views = st.number_input("Views médias por Reel", min_value=0.0, value=0.0, step=1000.0, format="%.0f")
-        reels_ctr_pct = st.number_input("CTR Reels (%)", min_value=0.0, max_value=100.0, value=0, step=0.1)
+        reels_ctr_pct = st.number_input("CTR Reels (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
         reels_ctr = reels_ctr_pct / 100.0
         st.markdown("### Instagram Stories")
         stories_qty = st.number_input("Qtd Stories (frames/combos)", min_value=0, value=0, step=1)
