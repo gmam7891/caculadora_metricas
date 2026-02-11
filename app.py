@@ -140,13 +140,13 @@ with tabs[0]:
         if manual_ftd_toggle:
             manual_ftd = st.number_input("FTD real (total)", min_value=0.0, value=0.0, step=1.0)
 
-        cvr_ftd = st.number_input("CVR para FTD (0,02 = 2%)", min_value=0.0, value=0.02, step=0.005, format="%.6f")
+        cvr_ftd = st.number_input("CVR para FTD (0,02 = 2%)", min_value=0.0, value=0.0, step=0.005, format="%.6f")
         value_per_ftd = st.number_input("Valor por FTD (R$) — LTV/NGR médio", min_value=0.0, value=600.0, step=50.0)
 
         st.markdown("### Metas")
-        target_roi_pct = st.number_input("ROI alvo (%)", min_value=-100.0, max_value=1000.0, value=30.0, step=5.0)
+        target_roi_pct = st.number_input("ROI alvo (%)", min_value=-100.0, max_value=1000.0, value=0.0, step=5.0)
         target_roi = target_roi_pct / 100.0
-        target_cpa = st.number_input("CPA (FTD) alvo (R$)", value=350.0, step=25.0)
+        target_cpa = st.number_input("CPA (FTD) alvo (R$)", value=0.0, step=25.0)
 
     with c2:
         st.subheader("Resultados")
