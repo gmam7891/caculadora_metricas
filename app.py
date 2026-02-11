@@ -92,7 +92,7 @@ def get_cfg(key: str, default: str = "") -> str:
     except Exception:
         return default
 
-client_id = get_cfg("TWITCH_CLIENT_ID", "")
+client_id = get_cfg("TWITCH_CLIENT_ID"te7d1l1bsctwjlehismvjgjpr3kqu7"")
 client_secret = get_cfg("TWITCH_CLIENT_SECRET", "")
 db_path = get_cfg("APP_DB_PATH", "./data/app.db")
 
