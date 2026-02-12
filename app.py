@@ -132,7 +132,7 @@ with tabs[0]:
 
     with c1:
         st.subheader("Inputs (manual)")
-        influencer_name = st.text_input("Nome do influenciador", placeholder="Ex: Jukes, Fulano, @perfil...")
+        influencer_name = st.text_input("Nome do influenciador", placeholder="Ex:Fulano")
         fee = st.number_input("Fee / investimento (R$)", min_value=0.0, value=0.0, step=1000.0, format="%.0f")
         
         st.markdown("### Instagram Reels")
@@ -224,6 +224,7 @@ with tabs[0]:
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
     
         # Inputs principais
+        "influencer_name": influencer_name,
         "fee": float(fee),
         "reels_qty": int(reels_qty),
         "stories_qty": int(stories_qty),
@@ -268,7 +269,7 @@ with tabs[0]:
     st.download_button(
         "📥 Baixar relatório Excel (Instagram/TikTok)",
         data=xlsx_bytes,
-        file_name="relatorio_influenciador.xlsx",
+        file_name=file_name,
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
