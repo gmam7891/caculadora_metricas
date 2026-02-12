@@ -132,8 +132,9 @@ with tabs[0]:
 
     with c1:
         st.subheader("Inputs (manual)")
+        influencer_name = st.text_input("Nome do influenciador", placeholder="Ex: Jukes, Fulano, @perfil...")
         fee = st.number_input("Fee / investimento (R$)", min_value=0.0, value=0.0, step=1000.0, format="%.0f")
-
+        
         st.markdown("### Instagram Reels")
         reels_qty = st.number_input("Qtd Reels", min_value=0, value=0, step=1)
         reels_avg_views = st.number_input("Views médias por Reel", min_value=0.0, value=0.0, step=1000.0, format="%.0f")
