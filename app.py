@@ -79,7 +79,7 @@ def load_streamers_file(path: str) -> List[str]:
 
 load_dotenv()
 
-st.set_page_config(page_title="Valuation Influenciadores + Twitch", layout="wide")
+st.set_page_config(page_title="Validação de Influenciadores", layout="wide")
 st.title("Valuation Influenciadores + Twitch")
 
 def get_cfg(key: str, default: str = "") -> str:
@@ -102,7 +102,7 @@ db_path = get_cfg("APP_DB_PATH", "./data/app.db")
 conn = storage.connect(db_path)
 storage.init_db(conn)
 
-tabs = st.tabs(["Instagram|Tik Tok", "Twitch", "YouTube", "LinkedIn"])
+tabs = st.tabs(["Instagram & Tik Tok", "Twitch", "YouTube", "LinkedIn"])
 
 # -------------------
 # Influenciador
