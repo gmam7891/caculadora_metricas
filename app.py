@@ -248,7 +248,7 @@ with tabs[1]:
         )
         churn_factor = st.number_input(
             "Fator de churn (estimativa p/ views únicas)",
-            min_value=0.5, value=0.0, step=1.0, format="%.0f"
+            min_value=0.5, value=2.0, step=1.0, format="%.0f"
         )
 
         st.markdown("### Dados do streamer (manual)")
