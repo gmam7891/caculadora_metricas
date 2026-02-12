@@ -12,18 +12,6 @@ from src import storage
 from src.influencer_metrics import influencer_calcs, fee_max_by_roi, fee_max_by_cpa
 from src.projections import project_twitch
 
-def get_cfg(key: str, default: str = "") -> str:
-    # 1) Variáveis de ambiente (local / servidor)
-    v = os.getenv(key)
-    if v:
-        return v
-
-    # 2) Streamlit Secrets (Streamlit Cloud)
-    try:
-        return str(st.secrets.get(key, default))
-    except Exception:
-        return default
-
 def fmt_money(v, prefix="R$ "):
     if v is None:
         return "-"
@@ -93,13 +81,14 @@ st.set_page_config(page_title="Valuation Influenciadores + Twitch", layout="wide
 st.title("Valuation Influenciadores + Twitch")
 
 def get_cfg(key: str, default: str = "") -> str:
-    # 1) .env / env vars
+    # 1) Variáveis de ambiente (local)
     v = os.getenv(key)
     if v:
         return v
+
     # 2) Streamlit Secrets (Cloud)
     try:
-        return str(st.secrets.get(key, default))
+        return str(st.secrets[key])
     except Exception:
         return default
 
