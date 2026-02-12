@@ -297,32 +297,5 @@ with tabs[1]:
             st.caption("Obs.: ‘views únicas’ é uma estimativa usando churn_factor.")
 
 
-# -------------------
-# Como rodar
-# -------------------
-with tabs[2]:
-    st.subheader("Rodar no VS Code (local)")
 
-    st.markdown(
-        '''
-### 1) Instalar deps
-```bash
-python -m venv .venv
-source .venv/bin/activate   # mac/linux
-pip install -r requirements.txt
-```
-
-### 2) Configurar .env
-Copie `.env.example` -> `.env` e preencha TWITCH_CLIENT_ID e TWITCH_CLIENT_SECRET.
-
-### 3) Rodar coletor (Terminal A)
-```bash
-python src/collector.py --channels-file streamers.txt --interval 120
-```
-
-### 4) Rodar app (Terminal B)
-```bash
-streamlit run app.py
-```
-        '''
     )
