@@ -218,6 +218,60 @@ with tabs[0]:
         else:
             st.error("❌ Cenário ruim (não bate metas) — renegociar fee/entregas ou revisar premissas.")
 
+    # ===== Relatório Excel (Influenciador) =====
+    influencer_row = {
+        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+    
+        # Inputs principais
+        "fee": float(fee),
+        "reels_qty": int(reels_qty),
+        "stories_qty": int(stories_qty),
+        "tiktok_qty": int(tiktok_qty),
+    
+        "reels_avg_views": float(reels_avg_views),
+        "stories_avg_views": float(stories_avg_views),
+        "tiktok_avg_views": float(tiktok_avg_views),
+    
+        "reels_ctr_pct": float(reels_ctr_pct),
+        "stories_ctr_pct": float(stories_ctr_pct),
+        "tiktok_ctr_pct": float(tiktok_ctr_pct),
+    
+        "manual_clicks": float(manual_clicks) if manual_clicks is not None else None,
+        "manual_ftd": float(manual_ftd) if manual_ftd is not None else None,
+    
+        "cvr_ftd_pct": float(cvr_ftd_pct),
+        "value_per_ftd": float(value_per_ftd),
+    
+        "target_roi_pct": float(target_roi_pct),
+        "target_cpa": float(target_cpa),
+    
+        # Outputs
+        "total_views": res.get("total_views"),
+        "clicks": res.get("clicks"),
+        "ftd": res.get("ftd"),
+        "revenue": res.get("revenue"),
+    
+        "cpm": res.get("cpm"),
+        "cpc": res.get("cpc"),
+        "cpa_ftd": res.get("cpa_ftd"),
+        "roas": res.get("roas"),
+        "roi": res.get("roi"),
+    
+        # Fee máximo (se você já calcula esses)
+        "max_fee_roi": max_fee_roi if "max_fee_roi" in locals() else None,
+        "max_fee_cpa": max_fee_cpa if "max_fee_cpa" in locals() else None,
+    }
+    
+    xlsx_bytes = df_to_xlsx_bytes({"Influenciador": pd.DataFrame([influencer_row])})
+    
+    st.download_button(
+        "📥 Baixar relatório Excel (Instagram/TikTok)",
+        data=xlsx_bytes,
+        file_name="relatorio_influenciador.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
 # -------------------
 # Twitch (MANUAL)
 # -------------------
