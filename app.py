@@ -14,6 +14,10 @@ from src import storage
 from src.influencer_metrics import influencer_calcs, fee_max_by_roi, fee_max_by_cpa
 from src.projections import project_twitch
 
+from io import BytesIO
+from datetime import datetime, timezone
+from openpyxl.utils import get_column_letter
+
 def fmt_money(v, prefix="R$ "):
     if v is None:
         return "-"
@@ -76,6 +80,22 @@ def load_streamers_file(path: str) -> List[str]:
             uniq.append(x)
     return uniq
 
+def df_to_xlsx_bytes(sheets: dict[str, pd.DataFrame]) -> bytes:
+    """Gera um .xlsx em memória com 1+ abas (sheets)."""
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        for sheet_name, df in sheets.items():
+            safe_name = sheet_name[:31]  # limite Excel
+            df.to_excel(writer, index=False, sheet_name=safe_name)
+            ws = writer.sheets[safe_name]
+
+            # Ajuste de largura
+            for col_idx, col_name in enumerate(df.columns, start=1):
+                values = df[col_name].astype(str).values.tolist()
+                max_len = max([len(str(col_name))] + [len(v) for v in values])
+                ws.column_dimensions[get_column_letter(col_idx)].width = min(max_len + 2, 45)
+
+    return output.getvalue()
 
 load_dotenv()
 
