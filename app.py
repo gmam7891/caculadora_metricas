@@ -429,19 +429,4 @@ elif page == "Twitch":
         st.write("Canal normalizado:", channel)
 
 
-# =======================
-# PAGE: AJUDA
-# =======================
-else:
-    st.subheader("Como rodar / configurar")
-    st.markdown(
-        """
-### Streamlit Cloud (online)
-1. Suba o projeto no GitHub (incluindo pasta `src/`)
-2. Deploy no Streamlit Cloud (main file: `app.py`)
-3. Vá em **Manage app → Settings → Secrets** e cole:
 
-```toml
-TWITCH_CLIENT_ID="..."
-TWITCH_CLIENT_SECRET="..."
-APP_DB_PATH="./data/app.db"
