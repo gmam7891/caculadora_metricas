@@ -80,7 +80,7 @@ def load_streamers_file(path: str) -> List[str]:
 load_dotenv()
 
 st.set_page_config(page_title="Validação de Influenciadores", layout="wide")
-st.title("Valuation Influenciadores + Twitch")
+st.title("Validação de Influenciadores")
 
 def get_cfg(key: str, default: str = "") -> str:
     # 1) Variáveis de ambiente (local)
