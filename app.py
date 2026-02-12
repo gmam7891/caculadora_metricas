@@ -269,7 +269,8 @@ with tabs[0]:
     st.download_button(
         "📥 Baixar relatório Excel (Instagram/TikTok)",
         data=xlsx_bytes,
-        file_name=file_name,
+        safe_name = (influencer_name or "influenciador").strip().replace(" ", "_").replace("/", "_")
+        file_name = f"relatorio_influenciador_{safe_name}.xlsx"
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
