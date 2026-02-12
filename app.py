@@ -102,7 +102,7 @@ db_path = get_cfg("APP_DB_PATH", "./data/app.db")
 conn = storage.connect(db_path)
 storage.init_db(conn)
 
-tabs = st.tabs(["Influenciador", "Twitch (Avg/Peak + Projeções)", "Como rodar"])
+tabs = st.tabs(["Influenciador", "Twitch"])
 
 # -------------------
 # Influenciador
