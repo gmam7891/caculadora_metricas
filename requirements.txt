@@ -4,3 +4,4 @@ requests>=2.31
 python-dotenv>=1.0
 numpy>=1.26
 python-dateutil>=2.9
+openpyxl>=3.1
