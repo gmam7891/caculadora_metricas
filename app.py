@@ -370,6 +370,40 @@ with tabs[1]:
 
             st.caption("Obs.: ‘views únicas’ é uma estimativa usando churn_factor.")
 
+        # ===== Relatório Excel (Twitch) =====
+        twitch_row = {
+            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+            "channel": channel,
+        
+            # Inputs (imagem 1)
+            "planned_hours_month": float(planned_hours),
+            "churn_factor": float(churn_factor),
+        
+            # Dados manuais (se você reestruturou p/ manual)
+            "avg_viewers_30d": float(avg_viewers),
+            "hours_watched_30d": float(hours_watched),
+            "followers_gained_30d": float(followers_gained),
+            "peak_viewers_30d": float(peak_viewers),
+            "hours_streamed_30d": float(hours_streamed),
+            "streams_30d": float(streams),
+        
+            # Outputs (imagem 2)
+            "projected_avg_viewers": proj.get("projected_avg_viewers"),
+            "projected_peak": proj.get("projected_peak"),
+            "projected_hours_watched": proj.get("projected_hours_watched"),
+            "projected_unique_views": proj.get("projected_unique_views"),
+        }
+        
+        xlsx_bytes = df_to_xlsx_bytes({"Twitch": pd.DataFrame([twitch_row])})
+        
+        st.download_button(
+            "📥 Baixar relatório Excel (Twitch)",
+            data=xlsx_bytes,
+            file_name=f"relatorio_twitch_{channel}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+
 
 
     
