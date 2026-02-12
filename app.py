@@ -266,13 +266,16 @@ with tabs[0]:
     
     xlsx_bytes = df_to_xlsx_bytes({"Influenciador": pd.DataFrame([influencer_row])})
     
+    safe_name = (influencer_name or "influenciador").strip().replace(" ", "_").replace("/", "_")
+    file_name = f"relatorio_influenciador_{safe_name}.xlsx"
+
     st.download_button(
         "📥 Baixar relatório Excel (Instagram/TikTok)",
         data=xlsx_bytes,
-        safe_name = (influencer_name or "influenciador").strip().replace(" ", "_").replace("/", "_")
-        file_name = f"relatorio_influenciador_{safe_name}.xlsx"
+        file_name=file_name,
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
+
 
 
 # -------------------
