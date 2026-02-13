@@ -308,17 +308,20 @@ with tabs[1]:
                 st.session_state.twitch_channel = st.text_input("Canal (login)", value=st.session_state.twitch_channel)
 
         with colB:
-            default_list = load_streamers_file("streamers.txt")  # pode manter se quiser usar depois
+            default_list = load_streamers_file("streamers.txt")
 
             if "twitch_channel" not in st.session_state:
                 st.session_state.twitch_channel = ""
             
-            raw_channel = st.text_input(
-                "Canal (login ou URL)",
-                value=st.session_state.twitch_channel,
-                placeholder="Ex: jukeslol ou https://twitch.tv/jukeslol"
-            )
-            st.session_state.twitch_channel = raw_channel
+            colA, colB = st.columns([4, 1])
+            
+            with colA:
+                raw_channel = st.text_input(
+                    "Canal (login ou URL)",
+                    value=st.session_state.twitch_channel,
+                    placeholder="Ex: jukeslol ou https://twitch.tv/jukeslol"
+                )
+                st.session_state.twitch_channel = raw_channel
             
             # Normaliza caso cole URL
             channel = (st.session_state.twitch_channel or "").lower().strip()
