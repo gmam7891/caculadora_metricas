@@ -343,56 +343,40 @@ with tabs[1]:
             st.markdown("---")
             st.subheader("Projeções (com base nos dados manuais)")
 
+            # calcula projeções
             proj = project_twitch(
                 planned_hours=float(planned_hours),
-                avg_viewers_30d=float(avg_viewers) if avg_viewers is not None else None,
-                peak_30d=int(peak_viewers) if peak_viewers is not None else None,
+                avg_viewers_30d=float(avg_viewers),
+                peak_30d=int(peak_viewers),
                 churn_factor=float(churn_factor),
                 vod_views_per_hour=None,
             )
-
-            p1, p2, p3, p4 = st.columns(4)
-            p1.metric("Avg viewers projetado", fmt_int(proj["projected_avg_viewers"]))
-            p2.metric("Peak projetado", fmt_int(proj["projected_peak"]))
-            p3.metric("Hours watched (proj.)", fmt_int(proj["projected_hours_watched"]))
-            p4.metric("Views únicas (proj.)", fmt_int(proj["projected_unique_views"]))
-
-            st.caption("Obs.: ‘views únicas’ é uma estimativa usando churn_factor.")
-
+            
             # ===== Relatório Excel (Twitch) =====
-        twitch_row = {
-            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-            "channel": channel,
-        
-            # Inputs (imagem 1)
-            "planned_hours_month": float(planned_hours),
-            "churn_factor": float(churn_factor),
-        
-            # Dados manuais (se você reestruturou p/ manual)
-            "avg_viewers_30d": float(avg_viewers),
-            "hours_watched_30d": float(hours_watched),
-            "followers_gained_30d": float(followers_gained),
-            "peak_viewers_30d": float(peak_viewers),
-            "hours_streamed_30d": float(hours_streamed),
-            "streams_30d": float(streams),
-        
-            # Outputs (imagem 2)
-            "projected_avg_viewers": proj.get("projected_avg_viewers"),
-            "projected_peak": proj.get("projected_peak"),
-            "projected_hours_watched": proj.get("projected_hours_watched"),
-            "projected_unique_views": proj.get("projected_unique_views"),
-        }
-        
-        xlsx_bytes = df_to_xlsx_bytes({"Twitch": pd.DataFrame([twitch_row])})
-        
-        st.download_button(
-            "📥 Baixar relatório Excel (Twitch)",
-            data=xlsx_bytes,
-            file_name=f"relatorio_twitch_{channel}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
-
-
-
-
-    
+            twitch_row = {
+                "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+                "channel": channel,
+                "planned_hours_month": float(planned_hours),
+                "churn_factor": float(churn_factor),
+            
+                "avg_viewers_30d": float(avg_viewers),
+                "hours_watched_30d": float(hours_watched),
+                "followers_gained_30d": float(followers_gained),
+                "peak_viewers_30d": float(peak_viewers),
+                "hours_streamed_30d": float(hours_streamed),
+                "streams_30d": float(streams),
+            
+                "projected_avg_viewers": proj.get("projected_avg_viewers"),
+                "projected_peak": proj.get("projected_peak"),
+                "projected_hours_watched": proj.get("projected_hours_watched"),
+                "projected_unique_views": proj.get("projected_unique_views"),
+            }
+            
+            xlsx_bytes = df_to_xlsx_bytes({"Twitch": pd.DataFrame([twitch_row])})
+            
+            st.download_button(
+                "📥 Baixar relatório Excel (Twitch)",
+                data=xlsx_bytes,
+                file_name=f"relatorio_twitch_{channel or 'canal'}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
