@@ -122,7 +122,7 @@ db_path = get_cfg("APP_DB_PATH", "./data/app.db")
 conn = storage.connect(db_path)
 storage.init_db(conn)
 
-tabs = st.tabs(["Instagram & Tik Tok", "Twitch", "YouTube", "LinkedIn"])
+tabs = st.tabs(["Instagram & Tik Tok", "Twitch", "Kick", "YouTube", "LinkedIn"])
 
 # -------------------
 # Influenciador
