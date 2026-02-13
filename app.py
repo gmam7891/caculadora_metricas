@@ -288,14 +288,7 @@ with tabs[1]:
 
     # ---------- LEFT: inputs ----------
     with left:
-        default_list = load_streamers_file("streamers.txt")
-
-        # Canal: select + aleatório + custom (login ou URL)
         if "twitch_channel" not in st.session_state:
-            st.session_state.twitch_channel = (default_list[0] if default_list else "shroud")
-
-                colA, colB = st.columns([3, 1])
-                if "twitch_channel" not in st.session_state:
             st.session_state.twitch_channel = ""
         
         raw_channel = st.text_input(
