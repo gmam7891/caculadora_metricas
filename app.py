@@ -308,19 +308,23 @@ with tabs[1]:
                 st.session_state.twitch_channel = st.text_input("Canal (login)", value=st.session_state.twitch_channel)
 
         with colB:
-            if default_list and st.button("🎲", help="Escolher um canal aleatório da lista"):
-                st.session_state.twitch_channel = random.choice(default_list)
-                st.rerun()
+            default_list = load_streamers_file("streamers.txt")  # pode manter se quiser usar depois
 
-        use_custom = st.checkbox("Usar canal fora da lista", value=False)
-        if use_custom:
-            raw = st.text_input("Canal (login ou URL)", value=st.session_state.twitch_channel)
-            st.session_state.twitch_channel = raw
+            if "twitch_channel" not in st.session_state:
+                st.session_state.twitch_channel = ""
+            
+            raw_channel = st.text_input(
+                "Canal (login ou URL)",
+                value=st.session_state.twitch_channel,
+                placeholder="Ex: jukeslol ou https://twitch.tv/jukeslol"
+            )
+            st.session_state.twitch_channel = raw_channel
+            
+            # Normaliza caso cole URL
+            channel = (st.session_state.twitch_channel or "").lower().strip()
+            channel = re.sub(r"^https?://(www\.)?twitch\.tv/", "", channel)
+            channel = channel.split("?")[0].strip("/").replace("@", "")
 
-        # Normaliza caso a pessoa cole URL
-        channel = (st.session_state.twitch_channel or "").lower().strip()
-        channel = re.sub(r"^https?://(www\.)?twitch\.tv/", "", channel)
-        channel = channel.split("?")[0].strip("/").replace("@", "")
 
         planned_hours = st.number_input(
             "Horas contratadas (mês)",
