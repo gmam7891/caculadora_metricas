@@ -294,39 +294,21 @@ with tabs[1]:
         if "twitch_channel" not in st.session_state:
             st.session_state.twitch_channel = (default_list[0] if default_list else "shroud")
 
-        colA, colB = st.columns([3, 1])
-        with colA:
-            if default_list:
-                picked = st.selectbox(
-                    "Canal (lista)",
-                    options=default_list,
-                    index=default_list.index(st.session_state.twitch_channel)
-                    if st.session_state.twitch_channel in default_list else 0
-                )
-                st.session_state.twitch_channel = picked
-            else:
-                st.session_state.twitch_channel = st.text_input("Canal (login)", value=st.session_state.twitch_channel)
+                colA, colB = st.columns([3, 1])
+                if "twitch_channel" not in st.session_state:
+            st.session_state.twitch_channel = ""
+        
+        raw_channel = st.text_input(
+            "Canal (login ou URL)",
+            value=st.session_state.twitch_channel,
+            placeholder="Ex: jukeslol ou https://twitch.tv/jukeslol"
+        )
+        st.session_state.twitch_channel = raw_channel
+        
+        channel = (st.session_state.twitch_channel or "").lower().strip()
+        channel = re.sub(r"^https?://(www\.)?twitch\.tv/", "", channel)
+        channel = channel.split("?")[0].strip("/").replace("@", "")
 
-        with colB:
-            default_list = load_streamers_file("streamers.txt")
-
-            if "twitch_channel" not in st.session_state:
-                st.session_state.twitch_channel = ""
-            
-            colA, colB = st.columns([4, 1])
-            
-            with colA:
-                raw_channel = st.text_input(
-                    "Canal (login ou URL)",
-                    value=st.session_state.twitch_channel,
-                    placeholder="Ex: jukeslol ou https://twitch.tv/jukeslol"
-                )
-                st.session_state.twitch_channel = raw_channel
-            
-            # Normaliza caso cole URL
-            channel = (st.session_state.twitch_channel or "").lower().strip()
-            channel = re.sub(r"^https?://(www\.)?twitch\.tv/", "", channel)
-            channel = channel.split("?")[0].strip("/").replace("@", "")
 
 
         planned_hours = st.number_input(
