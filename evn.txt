@@ -1,0 +1,3 @@
+TWITCH_CLIENT_ID=d2evugowek4wfnwn8hcki9gpprlxpy
+TWITCH_CLIENT_SECRET=v52xq2yd8me2f7bivp97rl4l3deblf
+APP_DB_PATH=./data/app.db

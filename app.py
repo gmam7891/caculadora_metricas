@@ -1,27 +1,30 @@
+import sys
 import os
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 import re
 import statistics
 from typing import Dict, Any, List, Optional
-
-import random
 
 import streamlit as st
 import pandas as pd
 from dotenv import load_dotenv
 
-from src.twitch_client import TwitchClient
-from src import storage
-from src.influencer_metrics import influencer_calcs, fee_max_by_roi, fee_max_by_cpa
-from src.projections import project_twitch
+from twitch_client import TwitchClient
+from storage import connect, init_db, get_stream_stats_30d, upsert_vod_summary, get_cached_vod_summary
+from influencer_metrics import influencer_calcs, fee_max_by_roi, fee_max_by_cpa
+from projections import project_twitch
 
-from io import BytesIO
-from datetime import datetime, timezone
-from openpyxl.utils import get_column_letter
+load_dotenv()
 
+
+# ==================== FUNÇÕES DE FORMATAÇÃO ====================
 def fmt_money(v, prefix="R$ "):
     if v is None:
         return "-"
     return f"{prefix}{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
 
 def fmt_int(v):
     if v is None:
@@ -31,10 +34,12 @@ def fmt_int(v):
     except Exception:
         return "-"
 
+
 def fmt_float(v, nd=2):
     if v is None:
         return "-"
     return f"{v:.{nd}f}".replace(".", ",")
+
 
 def parse_twitch_duration_to_hours(s: str) -> float:
     if not s:
@@ -43,25 +48,27 @@ def parse_twitch_duration_to_hours(s: str) -> float:
     mh = re.search(r"(\d+)h", s)
     mm = re.search(r"(\d+)m", s)
     ms = re.search(r"(\d+)s", s)
-    if mh: h = int(mh.group(1))
-    if mm: m = int(mm.group(1))
-    if ms: sec = int(ms.group(1))
+    if mh:
+        h = int(mh.group(1))
+    if mm:
+        m = int(mm.group(1))
+    if ms:
+        sec = int(ms.group(1))
     return h + (m / 60) + (sec / 3600)
+
 
 def vod_summary(vods: List[Dict[str, Any]]) -> Dict[str, Optional[float]]:
     if not vods:
         return {"vod_count": 0, "avg_vod_views": None, "median_vod_views": None, "views_per_hour": None}
-
     views = [int(v.get("view_count", 0)) for v in vods]
     hours = [parse_twitch_duration_to_hours(v.get("duration", "")) for v in vods]
     total_views = sum(views)
     total_hours = sum(hours)
-
     avg_v = (total_views / len(views)) if views else None
     med_v = float(statistics.median(views)) if views else None
     vph = (total_views / total_hours) if total_hours > 0 else None
-
     return {"vod_count": len(vods), "avg_vod_views": avg_v, "median_vod_views": med_v, "views_per_hour": vph}
+
 
 def load_streamers_file(path: str) -> List[str]:
     if not os.path.exists(path):
@@ -80,312 +87,193 @@ def load_streamers_file(path: str) -> List[str]:
             uniq.append(x)
     return uniq
 
-def df_to_xlsx_bytes(sheets: dict[str, pd.DataFrame]) -> bytes:
-    """Gera um .xlsx em memória com 1+ abas (sheets)."""
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        for sheet_name, df in sheets.items():
-            safe_name = sheet_name[:31]  # limite Excel
-            df.to_excel(writer, index=False, sheet_name=safe_name)
-            ws = writer.sheets[safe_name]
 
-            # Ajuste de largura
-            for col_idx, col_name in enumerate(df.columns, start=1):
-                values = df[col_name].astype(str).values.tolist()
-                max_len = max([len(str(col_name))] + [len(v) for v in values])
-                ws.column_dimensions[get_column_letter(col_idx)].width = min(max_len + 2, 45)
+# ==================== CONFIGURAÇÃO DO APP ====================
+st.set_page_config(page_title="Valuation Instagram & Twitch", layout="wide")
+st.title("Valuation Instagram & Twitch")
 
-    return output.getvalue()
+client_id = os.getenv("TWITCH_CLIENT_ID", "")
+client_secret = os.getenv("TWITCH_CLIENT_SECRET", "")
+db_path = os.getenv("APP_DB_PATH", "./data/app.db")
 
-load_dotenv()
+conn = connect(db_path)
+init_db(conn)
 
-st.set_page_config(page_title="Validação de Influenciadores", layout="wide")
-st.title("Validação de Influenciadores")
+tabs = st.tabs(["Instagram", "Twitch (Avg/Peak + Projeções)"])
 
-def get_cfg(key: str, default: str = "") -> str:
-    # 1) Variáveis de ambiente (local)
-    v = os.getenv(key)
-    if v:
-        return v
-
-    # 2) Streamlit Secrets (Cloud)
-    try:
-        return str(st.secrets[key])
-    except Exception:
-        return default
-
-client_id = get_cfg("d2evugowek4wfnwn8hcki9gpprlxpy", "")
-client_secret = get_cfg("ud5ks4z31r7stjtanemv75t1kplnar", "")
-db_path = get_cfg("APP_DB_PATH", "./data/app.db")
-
-
-conn = storage.connect(db_path)
-storage.init_db(conn)
-
-tabs = st.tabs(["Instagram & Tik Tok", "Twitch", "Kick", "YouTube", "LinkedIn"])
-
-# -------------------
-# Influenciador
-# -------------------
+# ==================== ABA INSTAGRAM ====================
 with tabs[0]:
     c1, c2 = st.columns([1, 1])
-
     with c1:
-        st.subheader("Inputs (manual)")
-        influencer_name = st.text_input("Nome do influenciador", placeholder="Ex:Fulano")
-        fee = st.number_input("Fee / investimento (R$)", min_value=0.0, value=0.0, step=1000.0, format="%.0f")
-        
-        st.markdown("### Instagram Reels")
-        reels_qty = st.number_input("Qtd Reels", min_value=0, value=0, step=1)
-        reels_avg_views = st.number_input("Views médias por Reel", min_value=0.0, value=0.0, step=1000.0, format="%.0f")
-        reels_ctr_pct = st.number_input("CTR Reels (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1, format="%.0f")
-        reels_ctr = reels_ctr_pct / 100.0
-        st.markdown("### Instagram Stories")
-        stories_qty = st.number_input("Qtd Stories (frames/combos)", min_value=0, value=0, step=1)
-        stories_avg_views = st.number_input("Views médias por Story", min_value=0.0, value=0.0, step=1000.0)
-        stories_ctr_pct = st.number_input("CTR Stories (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1, format="%.0f")
-        stories_ctr = stories_ctr_pct / 100.0
-
+        st.subheader("Instagram + TikTok")
+        fee_instagram = st.number_input("Fee / investimento (R$)", min_value=0, value=0, step=1000, key="fee_instagram")
+        st.markdown("### Reels")
+        reels_qty = st.number_input("Qtd Reels", min_value=0, value=0, step=1, key="reels_qty")
+        reels_avg_views = st.number_input("Views médias por Reel", min_value=0, value=0, step=1000, key="reels_views")
+        reels_ctr_percent = st.number_input("CTR Reels (%)", min_value=0, value=0, step=1, key="reels_ctr")
+        st.markdown("### Stories")
+        stories_qty = st.number_input("Qtd Stories", min_value=0, value=0, step=1, key="stories_qty")
+        stories_avg_views = st.number_input("Views médias por Story", min_value=0, value=0, step=1000, key="stories_views")
+        stories_ctr_percent = st.number_input("CTR Stories (%)", min_value=0, value=0, step=1, key="stories_ctr")
         st.markdown("### TikTok")
-        tiktok_qty = st.number_input("Qtd TikToks", min_value=0, value=0, step=1)
-        tiktok_avg_views = st.number_input("Views médias por TikTok", min_value=0.0, value=0.0, step=1000.0)  
-        tiktok_ctr_pct = st.number_input("CTR TikTok (%)", min_value=0.0, max_value=100.0, value=0.0, step=0.1)
-        tiktok_ctr = tiktok_ctr_pct / 100.0
-
+        tiktok_qty = st.number_input("Qtd TikToks", min_value=0, value=0, step=1, key="tiktok_qty")
+        tiktok_avg_views = st.number_input("Views médias por TikTok", min_value=0, value=0, step=1000, key="tiktok_views")
+        tiktok_ctr_percent = st.number_input("CTR TikTok (%)", min_value=0, value=0, step=1, key="tiktok_ctr")
         st.markdown("### Funil (FTD)")
-        manual_clicks_toggle = st.checkbox("Tenho cliques reais (sobrescrever CTR)", value=False)
-        manual_clicks = None
-        if manual_clicks_toggle:
-            manual_clicks = st.number_input("Cliques reais (total)", min_value=0.0, value=0.0, step=50.0, format="%.0f")
-
-        manual_ftd_toggle = st.checkbox("Tenho FTD real (sobrescrever projeção)", value=False)
-        manual_ftd = None
-        if manual_ftd_toggle:
-            manual_ftd = st.number_input("FTD real (total)", min_value=0.0, value=0.0, step=1.0, format="%.0f")
-
-        cvr_ftd_pct = st.number_input("CVR para FTD (%)", min_value=0.0, max_value=100.0, value=0.0, step=1.0, format="%.0f")
-        cvr_ftd = cvr_ftd_pct / 100.0
-        value_per_ftd = st.number_input("Valor por FTD (R$) — LTV/NGR médio", min_value=0.0, value=0.0, step=50.0, format="%.0f")
+        manual_clicks = st.number_input("Cliques reais (total) — deixe 0 para usar CTR", min_value=0, value=0, step=50, key="manual_clicks")
+        manual_ftd = st.number_input("FTD real (total) — deixe 0 para usar projeção", min_value=0, value=0, step=1, key="manual_ftd")
+        cvr_percent = st.number_input("CVR para FTD (%)", min_value=0, value=0, step=1, key="cvr_percent")
+        value_per_ftd = st.number_input("Valor por FTD (R$)", min_value=0, value=0, step=50, key="value_per_ftd")
 
         st.markdown("### Metas")
-        target_roi_pct = st.number_input("ROI alvo (%)", min_value=-100.0, max_value=1000.0, value=0.0, step=5.0)
-        target_roi = target_roi_pct / 100.0
-        target_cpa = st.number_input("CPA (FTD) alvo (R$)", value=0.0, step=25.0, format="%.0f")
+        roi_percent = st.number_input("ROI alvo (%)", min_value=0, value=0, step=5, key="roi_percent")
+        target_cpa = st.number_input("CPA alvo (R$)", min_value=0, value=0, step=25, key="target_cpa")
 
     with c2:
         st.subheader("Resultados")
+        reels_ctr = reels_ctr_percent / 100.0
+        stories_ctr = stories_ctr_percent / 100.0
+        tiktok_ctr = tiktok_ctr_percent / 100.0
+        cvr_ftd = cvr_percent / 100.0
+        target_roi = roi_percent / 100.0
+
         res = influencer_calcs(
-            fee=fee,
+            fee=fee_instagram,
             reels_qty=reels_qty, reels_avg_views=reels_avg_views, reels_ctr=reels_ctr,
             stories_qty=stories_qty, stories_avg_views=stories_avg_views, stories_ctr=stories_ctr,
             tiktok_qty=tiktok_qty, tiktok_avg_views=tiktok_avg_views, tiktok_ctr=tiktok_ctr,
-            manual_clicks=manual_clicks,
-            manual_ftd=manual_ftd,
+            manual_clicks=manual_clicks if manual_clicks > 0 else None,
+            manual_ftd=manual_ftd if manual_ftd > 0 else None,
             cvr_ftd=cvr_ftd,
             value_per_ftd=value_per_ftd,
         )
 
         k1, k2, k3, k4 = st.columns(4)
-        k1.metric("Views totais (proxy impressões)", fmt_int(res["total_views"]))
-        k2.metric("Cliques (estimado/real)", fmt_int(res["clicks"]))
-        k3.metric("FTD (proj./real)", fmt_float(res["ftd"], 1))
-        k4.metric("Receita (FTD * valor)", fmt_money(res["revenue"]))
+        k1.metric("Views totais", fmt_int(res["total_views"]))
+        k2.metric("Cliques", fmt_int(res["clicks"]))
+        k3.metric("FTD", fmt_int(res["ftd"]))
+        k4.metric("Receita", fmt_money(res["revenue"]))
 
         k5, k6, k7, k8, k9 = st.columns(5)
         k5.metric("CPM", fmt_money(res["cpm"]))
         k6.metric("CPC", fmt_money(res["cpc"]))
-        k7.metric("CPA (FTD)", fmt_money(res["cpa_ftd"]))
-        k8.metric("ROAS", fmt_float(res["roas"], 2))
-        k9.metric("ROI", fmt_float(res["roi"], 2))
+        k7.metric("CPA", fmt_money(res["cpa_ftd"]))
+        k8.metric("ROAS", fmt_int(res["roas"]))
+        k9.metric("ROI", f"{res['roi']*100:.0f}%")
 
         st.markdown("### Fee máximo para bater metas")
-        max_fee_roi = fee_max_by_roi(res["revenue"], target_roi) if res["revenue"] is not None else None
-        max_fee_cpa = fee_max_by_cpa(target_cpa, res["ftd"]) if res["ftd"] is not None else None
+        max_fee_roi = fee_max_by_roi(res["revenue"], target_roi) if res["revenue"] else 0
+        max_fee_cpa = fee_max_by_cpa(target_cpa, res["ftd"]) if res["ftd"] else 0
 
         a, b = st.columns(2)
         a.metric("Fee máx p/ ROI alvo", fmt_money(max_fee_roi))
         b.metric("Fee máx p/ CPA alvo", fmt_money(max_fee_cpa))
 
-        verdicts = []
-        if res["roi"] is not None:
-            verdicts.append(res["roi"] >= target_roi)
-        if res["cpa_ftd"] is not None:
-            verdicts.append(res["cpa_ftd"] <= target_cpa)
-
-        if verdicts and all(verdicts):
-            st.success("✅ Cenário saudável (bate ROI e CPA).")
-        elif verdicts and any(verdicts):
-            st.warning("⚠️ Cenário misto (bate uma meta e falha outra).")
+        if res["roi"] >= target_roi and (res["cpa_ftd"] is None or res["cpa_ftd"] <= target_cpa):
+            st.success("✅ LUCRATIVO")
+        elif res["roi"] >= 0:
+            st.warning("⚠️ Margem positiva")
         else:
-            st.error("❌ Cenário ruim (não bate metas) — renegociar fee/entregas ou revisar premissas.")
+            st.error("❌ PREJUÍZO")
 
-    # ===== Relatório Excel (Influenciador) =====
-    influencer_row = {
-        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-    
-        # Inputs principais
-        "influencer_name": influencer_name,
-        "fee": float(fee),
-        "reels_qty": int(reels_qty),
-        "stories_qty": int(stories_qty),
-        "tiktok_qty": int(tiktok_qty),
-    
-        "reels_avg_views": float(reels_avg_views),
-        "stories_avg_views": float(stories_avg_views),
-        "tiktok_avg_views": float(tiktok_avg_views),
-    
-        "reels_ctr_pct": float(reels_ctr_pct),
-        "stories_ctr_pct": float(stories_ctr_pct),
-        "tiktok_ctr_pct": float(tiktok_ctr_pct),
-    
-        "manual_clicks": float(manual_clicks) if manual_clicks is not None else None,
-        "manual_ftd": float(manual_ftd) if manual_ftd is not None else None,
-    
-        "cvr_ftd_pct": float(cvr_ftd_pct),
-        "value_per_ftd": float(value_per_ftd),
-    
-        "target_roi_pct": float(target_roi_pct),
-        "target_cpa": float(target_cpa),
-    
-        # Outputs
-        "total_views": res.get("total_views"),
-        "clicks": res.get("clicks"),
-        "ftd": res.get("ftd"),
-        "revenue": res.get("revenue"),
-    
-        "cpm": res.get("cpm"),
-        "cpc": res.get("cpc"),
-        "cpa_ftd": res.get("cpa_ftd"),
-        "roas": res.get("roas"),
-        "roi": res.get("roi"),
-    
-        # Fee máximo (se você já calcula esses)
-        "max_fee_roi": max_fee_roi if "max_fee_roi" in locals() else None,
-        "max_fee_cpa": max_fee_cpa if "max_fee_cpa" in locals() else None,
-    }
-    
-    xlsx_bytes = df_to_xlsx_bytes({"Influenciador": pd.DataFrame([influencer_row])})
-    
-    safe_name = (influencer_name or "influenciador").strip().replace(" ", "_").replace("/", "_")
-    file_name = f"relatorio_influenciador_{safe_name}.xlsx"
-
-    st.download_button(
-        "📥 Baixar relatório Excel (Instagram/TikTok)",
-        data=xlsx_bytes,
-        file_name=file_name,
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
-
-
-
-# -------------------
-# Twitch (MANUAL)
-# -------------------
+# ==================== ABA TWITCH ====================
 with tabs[1]:
-    st.subheader("Twitch — Projeções (manual)")
+    st.subheader("Twitch — Virtual Casino")
+    tc = None
+    if client_id and client_secret:
+        try:
+            tc = TwitchClient(client_id, client_secret)
+        except Exception:
+            tc = None
 
     left, right = st.columns([1, 2])
-
-    # ---------- LEFT: inputs ----------
     with left:
-        if "twitch_channel" not in st.session_state:
-            st.session_state.twitch_channel = ""
-        
-        raw_channel = st.text_input(
-            "Canal (login ou URL)",
-            value=st.session_state.twitch_channel,
-            placeholder="Ex: jukeslol ou https://twitch.tv/jukeslol"
-        )
-        st.session_state.twitch_channel = raw_channel
-        
-        channel = (st.session_state.twitch_channel or "").lower().strip()
-        channel = re.sub(r"^https?://(www\.)?twitch\.tv/", "", channel)
-        channel = channel.split("?")[0].strip("/").replace("@", "")
+        channel = st.text_input("Canal (login)", value="", placeholder="Digite o login aqui").lower().strip()
+        fee = st.number_input("Fee / investimento (R$)", min_value=0, value=0, step=1000)
+        planned_hours = st.number_input("Horas contratadas (mês)", min_value=0, value=0, step=1)
+        churn_factor = st.number_input("Fator de churn (views únicas)", min_value=0, value=0, step=1)
+        vod_n = st.number_input("VODs para média (últimos N)", min_value=0, value=0, step=1)
 
-
-
-        planned_hours = st.number_input(
-            "Horas contratadas (mês)",
-            min_value=0.0, value=0.0, step=1.0, format="%.0f"
-        )
-        churn_factor = st.number_input(
-            "Fator de churn (estimativa p/ views únicas)",
-            min_value=0.5, value=1.0, step=1.0, format="%.0f"
-        )
-
-        st.markdown("### Dados do streamer (manual)")
-        # keys por canal, pra não precisar digitar tudo de novo quando trocar
-        def k(name: str) -> str:
-            return f"tw_{channel}_{name}"
-
-        avg_viewers = st.number_input("Average viewers", min_value=0.0, value=0.0, step=1.0, format="%.0f", key=k("avg"))
-        hours_watched = st.number_input("Hours watched (30d)", min_value=0.0, value=0.0, step=1000.0, format="%.0f", key=k("hw"))
-        followers_gained = st.number_input("Followers gained (30d)", min_value=0.0, value=0.0, step=10.0, format="%.0f", key=k("fg"))
-        peak_viewers = st.number_input("Peak viewers (30d)", min_value=0.0, value=0.0, step=1.0, format="%.0f", key=k("peak"))
-        hours_streamed = st.number_input("Hours streamed (30d)", min_value=0.0, value=0.0, step=1.0, format="%.0f", key=k("hs"))
-        streams = st.number_input("Streams (30d)", min_value=0.0, value=0.0, step=1.0, format="%.0f", key=k("streams"))
-
-    
-    # ---------- RIGHT: dashboard ----------
     with right:
         if not channel:
-            st.info("Selecione/cole um canal (login ou URL).")
+            st.info("Digite o login do canal acima.")
         else:
-            # Mostra os dados manuais (seis campos)
+            stats = get_stream_stats_30d(conn, channel)
+            avg_30d = stats["avg_viewers_30d"]
+            peak_30d = stats["peak_viewers_30d"]
+
+            is_live_now = False
+            live_viewers_now = None
+            is_casino = False
+            if tc:
+                try:
+                    live_map = tc.get_streams_by_logins([channel])
+                    s = live_map.get(channel)
+                    if s:
+                        is_live_now = True
+                        live_viewers_now = int(s.get("viewer_count", 0))
+                        is_casino = str(s.get("game_id")) == "29452"
+                except Exception:
+                    pass
+
+            vod_cached = get_cached_vod_summary(conn, channel, max_age_hours=12)
+
             top = st.columns(6)
-            top[0].metric("Average viewers", fmt_int(avg_viewers))
-            top[1].metric("Hours watched (30d)", fmt_int(hours_watched))
-            top[2].metric("Followers gained (30d)", fmt_int(followers_gained))
-            top[3].metric("Peak viewers (30d)", fmt_int(peak_viewers))
-            top[4].metric("Hours streamed (30d)", fmt_int(hours_streamed))
-            top[5].metric("Streams (30d)", fmt_int(streams))
+            top[0].metric("Status agora", "✅ LIVE" if is_live_now else "⭕ OFF")
+            top[1].metric("Viewers agora", fmt_int(live_viewers_now))
+            top[2].metric("Avg viewers (30d)", fmt_int(avg_30d))
+            top[3].metric("Peak (30d)", fmt_int(peak_30d))
+
+            if not is_casino and is_live_now:
+                st.error("❌ Canal não está em Virtual Casino.")
 
             st.markdown("---")
-            st.subheader("Projeções (com base nos dados manuais)")
+            st.subheader("💰 Valuation Financeiro (Fee Independente)")
 
-            # 1) Calcula projeções
+            roi_percent_tw = st.number_input("ROI alvo (%)", min_value=0, value=0, step=5, key="roi_tw")
+            target_roi_tw = roi_percent_tw / 100.0
+
+            target_cpa_tw = st.number_input("CPA alvo (R$)", min_value=0, value=0, step=25, key="cpa_tw")
+
+            ctr_percent_tw = st.number_input("CTR Twitch (%)", min_value=0, value=0, step=1, key="ctr_tw")
+            cvr_percent_tw = st.number_input("CVR para FTD (%)", min_value=0, value=0, step=1, key="cvr_tw")
+            value_per_ftd_tw = st.number_input("Valor por FTD (R$)", min_value=0, value=0, step=50, key="vftd_tw")
+
+            twitch_ctr = ctr_percent_tw / 100.0
+            twitch_cvr = cvr_percent_tw / 100.0
+
             proj = project_twitch(
-                planned_hours=float(planned_hours),
-                avg_viewers_30d=float(avg_viewers) if avg_viewers is not None else 0.0,
-                peak_30d=int(peak_viewers) if peak_viewers is not None else 0,
-                churn_factor=float(churn_factor),
-                vod_views_per_hour=None,
+                planned_hours=planned_hours,
+                avg_viewers_30d=avg_30d,
+                peak_30d=peak_30d,
+                churn_factor=churn_factor,
+                vod_views_per_hour=vod_cached["views_per_hour"] if vod_cached else None,
             )
-            
-            # 2) Mostra os resultados (IMAGEM 2)
-            p1, p2, p3, p4 = st.columns(4)
-            p1.metric("Avg viewers projetado", fmt_int(proj.get("projected_avg_viewers")))
-            p2.metric("Peak projetado", fmt_int(proj.get("projected_peak")))
-            p3.metric("Hours watched (proj.)", fmt_int(proj.get("projected_hours_watched")))
-            p4.metric("Views únicas (proj.)", fmt_int(proj.get("projected_unique_views")))
-            
-            st.caption("Obs.: ‘views únicas’ é uma estimativa usando churn_factor. Ajuste conforme sua realidade.")
-            
-            # 3) Botão Excel (depois das métricas)
-            twitch_row = {
-                "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-                "channel": channel,
-                "planned_hours_month": float(planned_hours),
-                "churn_factor": float(churn_factor),
-            
-                "avg_viewers_30d": float(avg_viewers),
-                "hours_watched_30d": float(hours_watched),
-                "followers_gained_30d": float(followers_gained),
-                "peak_viewers_30d": float(peak_viewers),
-                "hours_streamed_30d": float(hours_streamed),
-                "streams_30d": float(streams),
-            
-                "projected_avg_viewers": proj.get("projected_avg_viewers"),
-                "projected_peak": proj.get("projected_peak"),
-                "projected_hours_watched": proj.get("projected_hours_watched"),
-                "projected_unique_views": proj.get("projected_unique_views"),
-            }
-            
-            xlsx_bytes = df_to_xlsx_bytes({"Twitch": pd.DataFrame([twitch_row])})
-            
-            st.download_button(
-                "📥 Baixar relatório Excel (Twitch)",
-                data=xlsx_bytes,
-                file_name=f"relatorio_twitch_{channel or 'canal'}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            )
+
+            unique_views = proj.get("projected_unique_views", 0) or 0
+            clicks = unique_views * twitch_ctr
+            ftd = clicks * twitch_cvr
+            revenue = ftd * value_per_ftd_tw
+            roi = ((revenue - fee) / fee) if fee > 0 else 0
+            cpa = (fee / ftd) if ftd > 0 else None
+
+            tc1, tc2, tc3, tc4 = st.columns(4)
+            tc1.metric("Cliques estimados", fmt_int(clicks))
+            tc2.metric("FTD projetado", fmt_int(ftd))
+            tc3.metric("Receita projetada", fmt_money(revenue))
+            tc4.metric("ROAS", fmt_int(revenue / fee if fee > 0 else 0))
+
+            td1, td2, td3, td4 = st.columns(4)
+            td1.metric("CPA (FTD)", fmt_money(cpa))
+            td2.metric("ROI", f"{roi*100:.0f}%")
+            td3.metric("Lucro/Prejuízo", fmt_money(revenue - fee))
+            td4.metric("Fee máximo", fmt_money(fee_max_by_roi(revenue, target_roi_tw)))
+
+            if fee > 0:
+                if roi >= target_roi_tw and (cpa is None or cpa <= target_cpa_tw):
+                    st.success("✅ LUCRATIVO")
+                elif roi >= 0:
+                    st.warning("⚠️ Margem positiva")
+                else:
+                    st.error("❌ PREJUÍZO")
+
