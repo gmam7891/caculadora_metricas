@@ -90,7 +90,7 @@ def load_streamers_file(path: str) -> List[str]:
 
 # ==================== CONFIGURAÇÃO DO APP ====================
 st.set_page_config(page_title="Valuation Instagram & Twitch", layout="wide")
-st.image("logo_gmce.png", width=180)
+st.image("logo_gmcr.png", width=180)
 st.title("Valuation Instagram & Twitch")
 
 client_id = os.getenv("TWITCH_CLIENT_ID", "")
